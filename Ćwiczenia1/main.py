@@ -1,6 +1,13 @@
+from fractions import Fraction
+
 def sum(arg1, arg2):
-    x = arg1 + arg2 
-    return x
+    if (type(arg1) or type(arg2)) is complex:
+        return complex(arg1.real + arg2.real, arg1.imag + arg2.imag)
+
+    elif (type(arg1) or type(arg2)) is Fraction:
+        return Fraction(arg1 + arg2)
+
+    return arg1 + arg2
 
 if(__name__ == '__main__'):
     print(sum(1,3))
