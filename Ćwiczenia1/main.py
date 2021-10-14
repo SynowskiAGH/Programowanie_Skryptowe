@@ -7,7 +7,12 @@ def sum(arg1, arg2):
     elif (type(arg1) or type(arg2)) is Fraction:
         return Fraction(arg1 + arg2)
 
-    return arg1 + arg2
+    # elif (type(arg1) or type(arg2)) is str:
+    #      return float(arg1) + float(arg2) - Wszystko zamyka się w
+    #      jednym elsie
+
+    else:
+        return float(arg1) + float(arg2)
 
 if(__name__ == '__main__'):
     print(sum(1,3))
