@@ -1,0 +1,35 @@
+lancuch1 = '''Fal nie ma fal
+Nie ma fal
+Nie ma fal
+Nie ma fal
+Nie ma fal
+Nie ma fal
+Nie ma faaal
+Fal nie ma fal \n''' 
+
+
+lancuch2 = '''Światło księżyca policzkuje żyrandol
+Wtedy słyszę czyjś śpiew: "Witaj w hotelu 'Marmur'"
+Wtedy słyszę ryk drzew: "Witaj w hotelu 'Marmur'"
+Nagle słyszę krzyk mew: "Witaj w hotelu 'Marmur'"\n '''
+
+
+print((lancuch1 + lancuch2)*3)
+
+lancuch = 'Lubię takie śmieszne literki jak ż, ś, ó itd.'
+
+print(lancuch[0])
+
+print(lancuch[0:2])
+
+print(lancuch[2:])
+
+print(lancuch[-2])
+
+print(lancuch[-3:])
+
+print(lancuch[1::2])
+
+
+#Łańcuchy znaków nie mogą być modyfikowane, nie można przypisac nowej
+#wartości do zaindeksowanej pozycji łańucha
