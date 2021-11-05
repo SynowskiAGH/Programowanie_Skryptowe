@@ -66,7 +66,7 @@ class Term(object):
         return self.equals(termin)
 
     def __sub__(self, termin):
-        hour_d  = self._hour + (self._duration // 60) - termin._hour
-        min_d   = self._minute + self._duration % 60 - termin._minute 
-        new_dur = hour_d*60 + min_d
-        return Term(termin.hour, termin.minute, new_dur, termin.day)
+        hour_ct  = self._hour + (self._duration // 60) - termin._hour
+        min_ct   = self._minute + self._duration % 60 - termin._minute 
+        new_duration = hour_ct*60 + min_ct
+        return Term(termin.hour, termin.minute, new_duration, termin.day)
