@@ -45,10 +45,25 @@ class Term(object):
         return "{}:{} [{}]".format(self._hour, "0"+str(self._minute) if self._minute >= 0 and self._minute <= 9 else self._minute, self._duration)
 
     def earlierThan(self, termin):
-        return False if termin._hour < self._hour else (False if termin._hour == self._hour and termin._minute < self._minute else True) 
+        if termin.hour < self._hour:
+            return False
+        elif termin.hour == self._hour:
+            if termin.minute < self._minute:
+                return False
+        else:
+            return True
+
+    def laterThan(self, termin):
+        if termin.hour > self._hour:
+            return False
+        elif termin.hour == self._hour:
+            if termin.minute > self._minute:
+                return False
+        else:
+            return True
 
     def equals(self, termin):
-        return True if self._day == termin._day and self._hour == termin._hour and self._minute == termin._minute and self._duration == termin._duration else False
+        return True if self._day.difference(termin._day) == 0 and self._hour == termin.hour and self._minute == termin.minute else False 
     
     def __lt__(self, termin):
         return self.earlierThan(termin)
