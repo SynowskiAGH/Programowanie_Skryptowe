@@ -4,7 +4,7 @@ class Klasa(object):
         print("Wywołano metodę '__init__()'")
         self.tab = [tab]
         self._zmienna1 = zmienna1
-        self.__zmienna2 = zmienna2
+        self.__zmienna2 = zmienna2 #print(obiekt._Klasa__zmienna2)
 
 
     def __del__(self):
