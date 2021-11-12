@@ -11,32 +11,34 @@ class Term:
     def __str__(self):
         return(f"{repr(self._day)} {self.hour}:{self.minute} [{self.duration}]")
 
-    def earlierThan(self, termin):
+    def laterThan(self, termin):
         if Day.difference(self._day, termin._day) < 0:
             return True
-        elif Day.difference(self._day, termin._day) == 0:
+        if Day.difference(self._day, termin._day) == 0:
             if termin.hour < self.hour:
                 return True
-            if termin.hour == self.hour and termin.minute < self.hour:
+            elif termin.hour == self.hour and termin.minute < self.minute:
                 return True
-        else: return False
+            return False
+        return False
 
     def equals (self, termin):
         return True if Day.difference(self._day, termin._day) == 0 and termin.hour == self.hour and termin.minute == self.minute else False
     
-    def laterThan(self, termin):
+    def earlierThan(self, termin):
         if Day.difference(self._day, termin._day) > 0:
             return True
         elif Day.difference(self._day, termin._day) == 0:
             if termin.hour > self.hour:
                 return True
-            if termin.hour == self.hour and termin.minute > self.hour:
-                return 
-        else: False
+            elif termin.hour == self.hour and termin.minute > self.minute:
+                return True
+            return False
+        return False
 
-term1 = Term(Day.TUE, 9, 45)
+term1 = Term(Day.TUE, 8, 45)
 print(term1)
-term2 = Term(Day.WED, 10, 15)
+term2 = Term(Day.TUE, 9, 45)
 print(term2)
 print(term1.earlierThan(term2)) #Ma byc true
 print(term1.laterThan(term2)) #Ma byc false
