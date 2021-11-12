@@ -1,4 +1,4 @@
-from day import Day
+from DeanerySystem.day import Day
 
 class Term:
     def __init__(self, day, hour, minute): #Konstruktor
