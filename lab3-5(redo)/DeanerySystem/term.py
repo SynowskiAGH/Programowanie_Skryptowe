@@ -1,15 +1,41 @@
 from DeanerySystem.day import Day
 
 class Term:
-    def __init__(self, day, hour, minute): #Konstruktor
+    def __init__(self, hour, minute, duration = 90, day: Day = Day.MON): #Konstruktor
         self.hour = hour
         self.minute = minute
-        self.duration = 90
+        self.duration = duration
         self._day = day
+
+    def __lt__(self, other):
+        return Term.earlierThan(self, other)
+
+    def __le__(self, other):
+        return Term.earlierThan(self, other) or Term.equals(self, other)
+
+    def __eq__(self, other):
+        return Term.equals(self, other)
+
+    def __ge__(self, other):
+        return Term.laterThan(self, other) or Term.equals(self, other)
+
+    def __gt__(self, other):
+        return Term.laterThan(self, other)
+
+    def __sub__(first, second):
+        first_hour = first.duration // 60
+        first_minute = first.duration % 60
+        first.hour = first.hour + first_hour
+        first.minute = first.minute + first_minute
+        ret_hour = (first.hour-second.hour)*60
+        ret_minute = first.minute-second.minute
+        return Term(second.hour, second.minute, (ret_hour+ret_minute))
+
+        
 
 
     def __str__(self):
-        return(f"{repr(self._day)} {self.hour}:{self.minute} [{self.duration}]")
+        return(f"{self.hour}:{self.minute} [{self.duration}]")
 
     def laterThan(self, termin):
         if Day.difference(self._day, termin._day) < 0:
@@ -23,7 +49,7 @@ class Term:
         return False
 
     def equals (self, termin):
-        return True if Day.difference(self._day, termin._day) == 0 and termin.hour == self.hour and termin.minute == self.minute else False
+        return True if Day.difference(self._day, termin._day) == 0 and termin.hour == self.hour and termin.minute == self.minute and termin.duration == self.duration else False
     
     def earlierThan(self, termin):
         if Day.difference(self._day, termin._day) > 0:
@@ -36,10 +62,3 @@ class Term:
             return False
         return False
 
-term1 = Term(Day.TUE, 8, 45)
-print(term1)
-term2 = Term(Day.TUE, 9, 45)
-print(term2)
-print(term1.earlierThan(term2)) #Ma byc true
-print(term1.laterThan(term2)) #Ma byc false
-print(term1.equals(term2)) #Ma byc false
