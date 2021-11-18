@@ -30,7 +30,7 @@ class Timetable1:
         if term.hour < 8: #Jeśli zaczyna się przed 8
             return False
 
-        et = term.GetEndTime()
+        et = term.getEndTime()
         if et[0] > 20: #Jeśli kończy się po 20
             return False
         if et[0] == 20 and et[1] > 0:
@@ -70,9 +70,9 @@ class Timetable1:
                 return True
 
             les_start = (les.term.hour, les.term.minute) #Godzina rozpoczęcia się termu
-            les_end = les.term.GetEndTime() #Godzina zakończenia się termu
+            les_end = les.term.getEndTime() #Godzina zakończenia się termu
             ter_start = (term.hour, term.minute) #Godzina rozpoczęcia się lekcji
-            ter_end = term.GetEndTime() #Godzina zakończenia się lekcji
+            ter_end = term.getEndTime() #Godzina zakończenia się lekcji
 
             if les_end > ter_start and les_end < ter_end:
                 return True #Jeśli lekcja znajduje się wokół termu to true
