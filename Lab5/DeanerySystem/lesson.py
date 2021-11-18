@@ -145,12 +145,30 @@ class Lesson():
 
         nt = Term(self.__term.hour - h_dif, self.__term.minute - m_dif, self.__term.day)
 
+        if hasattr(self.timetable, 'breaks'):
+            if not self.timetable.skipBreaks:
+                bo = self.timetable.overlapsBreak(nt)
+                if bo:
+                    return False
+            else:
+                bo = self.timetable.overlapsBreak(nt)
+                if bo:
+                    h_dif += bo[1] // 60
+                    m_dif += bo[1] % 60
+
+                    if self.__term.minute - m_dif < 0:
+                        m_dif -= 60
+                        h_dif += 1
+
+                    nt = Term(self.__term.hour - h_dif, self.__term.minute - m_dif, self.__term.day)
+
         if not self.timetable.can_be_transferred_to(nt, self.full_time):
             return False
 
         self.__term.hour -= h_dif
         self.__term.minute -= m_dif
         return True
+
 
     def laterTime(self):
         h_dif = self.__term.duration // 60
@@ -162,12 +180,30 @@ class Lesson():
 
         nt = Term(self.__term.hour + h_dif, self.__term.minute + m_dif, self.__term.day)
 
+        if hasattr(self.timetable, 'breaks'):
+            if not self.timetable.skipBreaks:
+                bo = self.timetable.overlapsBreak(nt)
+                if bo:
+                    return False
+            else:
+                bo = self.timetable.overlapsBreak(nt)
+                if bo:
+                    h_dif += bo[1] // 60
+                    m_dif += bo[1] % 60
+
+                    if self.__term.minute - m_dif < 0:
+                        m_dif -= 60
+                        h_dif += 1
+
+                    nt = Term(self.__term.hour - h_dif, self.__term.minute - m_dif, self.__term.day)
+
         if not self.timetable.can_be_transferred_to(nt, self.full_time):
             return False
 
         self.__term.hour += h_dif
         self.__term.minute += m_dif
         return True
+
 
     def __str__(self):
         if self.__year == 1:
