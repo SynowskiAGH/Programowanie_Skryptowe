@@ -1,4 +1,4 @@
-from DeanerySystem.term import Term
+from DeanerySystem.basicterm import BasicTerm
 
 class Break:
     def __init__(self, term):
@@ -8,7 +8,7 @@ class Break:
         return "Przerwa"
 
     def getTerm(self):
-        return self.term
+        return self.__term
 
     @property
     def term(self):
@@ -17,7 +17,6 @@ class Break:
     @term.setter
     def term(self, value):
         self.__term = value
-
 
     
 
