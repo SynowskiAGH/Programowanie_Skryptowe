@@ -1,18 +1,44 @@
 from typing import List
-from DeanerySystem import break_class
+from DeanerySystem.break_class import Break
 
 from DeanerySystem.day import Day
 from DeanerySystem.term import Term
 from DeanerySystem.lesson import Lesson
 from DeanerySystem.action import Action
+from DeanerySystem.basictimetable import BasicTimetable
 
 
-class Timetable2:
+class Timetable2(BasicTimetable):
+    skipBreaks = False
+
     """ Class containing a set of operations to manage the timetable """
 
-    def __init__(self, breaks: List[break_class.Break]):
-        self.lesson_list = []
-        self.breaks = List[break_class.Break]
+    def __init__(self, breaks: List[Break]):
+        super().__init__()
+        self.breaks = breaks
+
+    def overlapsBreak(self, term: Term) -> bool: #Check overlapu
+        ts = term.getStartTime()
+        te = term.getEndTime()
+
+        for bre in self.breaks:
+            bs = bre.term.getStartTime()
+            be = bre.term.getEndTime()
+
+            if ts > bs and ts < be:
+                return (True, bre.term.duration)
+
+            if te > bs and te < be:
+                return (True, bre.term.duration)
+
+            if ts == bs and te > be:
+                return (True, bre.term.duration)
+                
+            if ts < bs and te == be:
+                return (True, bre.term.duration)
+
+        return False
+
 
     def can_be_transferred_to(self, term: Term, full_time: bool) -> bool:
         """
@@ -32,7 +58,7 @@ class Timetable2:
         if term.hour < 8:
             return False
 
-        et = term.GetEndTime()
+        et = term.getEndTime()
         if et[0] > 20:
             return False
         if et[0] == 20 and et[1] > 0:
@@ -67,14 +93,14 @@ class Timetable2:
             **True** if the term is busy
         """
 
-        for les in self.lesson_list:
+        for les in list(self.lesson_dict.values()):
             if les.term == term:
                 return True
 
             les_start = (les.term.hour, les.term.minute)
-            les_end = les.term.GetEndTime()
+            les_end = les.term.getEndTime()
             ter_start = (term.hour, term.minute)
-            ter_end = term.GetEndTime()
+            ter_end = term.getEndTime()
 
             if les_end > ter_start and les_end < ter_end:
                 return True
@@ -99,62 +125,33 @@ class Timetable2:
         bool
             **True**  if the lesson was added.  The lesson cannot be placed if the timetable slot is already occupied.
         """
-
         if type(lesson) is not Lesson:
             raise TypeError('Argument \'put()\' musi być typu \'Lesson\'')
+
         else:
-            if self.busy(lesson.term):
-                return False
-            self.lesson_list.append(lesson)
+            for les in list(self.lesson_dict.values()):
+                if les.term == lesson.term:
+                    raise ValueError(f'Podany termin jest zajęty przez inną lekcję')
+
+            if self.overlapsBreak(lesson.term):
+                raise ValueError('Podany termin jest zajęty przez przerwę')
+
+            self.lesson_dict[f'{lesson.term.printStartTime()}-{lesson.term.printEndTime()}-{lesson.term.day}'] = lesson
             return True
 
 
-    def parse(self, actions: List[str]) -> List[Action]:
-        """
-        Converts an array of strings to an array of 'Action' objects.
-        Parameters
-        ----------
-        actions:  List[str]
-            A list containing the strings: "d-", "d+", "t-" or "t+"
-        Returns
-        -------
-            List[Action]
-                A list containing the values:  DAY_EARLIER, DAY_LATER, TIME_EARLIER or TIME_LATER
-        """
-
-        action_list = []
-        for ac in actions:
-            if ac in Action._value2member_map_:
-                action_list.append(Action(ac))
-        return action_list
-
-    def perform(self, actions: List[Action]):
-        """
-        Transfer the lessons included in the timetable as described in the list of actions. N-th action should be sent the n-th lesson in the timetable.
-        Parameters
-        ----------
-        actions : List[Action]
-            Actions to be performed
-        """
-        lc = 0
-        for ac in actions:
-            if ac == Action.DAY_EARLIER:
-                self.lesson_list[lc].earlierDay()
-            elif ac == Action.DAY_LATER:
-                self.lesson_list[lc].laterDay()
-            elif ac == Action.TIME_EARLIER:
-                self.lesson_list[lc].earlierTime()
-            elif ac == Action.TIME_LATER:
-                self.lesson_list[lc].laterTime()
-
-            lc += 1
-            lc %= len(self.lesson_list)
-
     def __str__(self):
         timetab = [] #Wywołuje tablice timetab
-        for les in self.lesson_list:
+
+        for les in list(self.lesson_dict.values()):
             timetab.append(les.term)
-        timetab = sorted(timetab, key=lambda t: t.printStartTime())
+
+        for bre in self.breaks:
+            tstr = f'{bre.term.printStartTime()}-{bre.term.printEndTime()}'
+            if not tstr in timetab:
+                timetab.append(tstr)
+
+        timetab = sorted(timetab)
 
         disptab = []
         for i in range(8):
@@ -168,8 +165,15 @@ class Timetable2:
         for c, t in enumerate(timetab):
             disptab[0][c + 1] = f'{t.printStartTime()}-{t.printEndTime()}'
 
-        for les in self.lesson_list:
+        for les in list(self.lesson_dict.values()):
+            tstr = f'{les.term.printStartTime()}-{les.term.printEndTime()}'            
             disptab[les.term.day.value][timetab.index(les.term) + 1] = les.name
+
+
+        for bre in self.breaks:
+            tstr = f'{bre.term.printStartTime()}-{bre.term.printEndTime()}'
+            for i in range(1, 8):
+                disptab[i][timetab.index(tstr) + 1] = f'------'
 
         b = ''
         bl = f'\n{b: ^12}{b:*^92}\n'
@@ -183,23 +187,3 @@ class Timetable2:
 
         return finstr
         
-
-    def get(self, term: Term) -> Lesson:
-        """
-        Get object (lesson) indicated by the given term.
-        Parameters
-        ----------
-        term: Term
-            Lesson date
-        Returns
-        -------
-        lesson: Lesson
-            The lesson object or None if the term is free
-        """
-        
-        ltr = None
-        for les in self.lesson_list:
-            if les.term == term:
-                ltr = les
-                break
-        return ltr
