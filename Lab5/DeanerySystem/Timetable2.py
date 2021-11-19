@@ -18,23 +18,23 @@ class Timetable2(BasicTimetable):
         self.breaks = breaks
 
     def overlapsBreak(self, term: Term) -> bool: #Check overlapu
-        ts = term.getStartTime()
-        te = term.getEndTime()
+        start_time = term.getStartTime()
+        end_time = term.getEndTime()
 
         for bre in self.breaks:
-            bs = bre.term.getStartTime()
-            be = bre.term.getEndTime()
+            break_start = bre.term.getStartTime()
+            break_end = bre.term.getEndTime()
 
-            if ts > bs and ts < be:
+            if start_time > break_start and start_time < break_end:
                 return (True, bre.term.duration)
 
-            if te > bs and te < be:
+            if end_time > break_start and end_time < break_end:
                 return (True, bre.term.duration)
 
-            if ts == bs and te > be:
+            if start_time == break_start and end_time > break_end:
                 return (True, bre.term.duration)
                 
-            if ts < bs and te == be:
+            if start_time < break_start and end_time == break_end:
                 return (True, bre.term.duration)
 
         return False
@@ -65,17 +65,19 @@ class Timetable2(BasicTimetable):
             return False
 
         if not self.busy(term):
+
             if term.day.value < 5:
-                is_ft = True
+                is_FullTime = True
             elif term.day.value > 5:
-                is_ft = False
+                is_FullTime = False
+
             else:
                 if term.hour < 17:
-                    is_ft = True
+                    is_FullTime = True
                 else:
-                    is_ft = False
+                    is_FullTime = False
 
-            if is_ft == full_time:
+            if is_FullTime == full_time:
                 return True
         return False
 
@@ -141,49 +143,45 @@ class Timetable2(BasicTimetable):
 
 
     def __str__(self):
-        timetab = [] #Wywołuje tablice timetab
+        timetable = [] #Wywołuje tablice timetable
+        space = ''
+        line = f'\n{space: ^12}{space:*^92}\n'
 
         for les in list(self.lesson_dict.values()):
-            timetab.append(les.term)
+            timetable.append(les.term)
 
         for bre in self.breaks:
-            tstr = f'{bre.term.printStartTime()}-{bre.term.printEndTime()}'
-            if not tstr in timetab:
-                timetab.append(tstr)
+            t_string = f'{bre.term.printStartTime()}-{bre.term.printEndTime()}'
+            if not t_string in timetable:
+                timetable.append(t_string)
+        timetable = sorted(timetable)
 
-        timetab = sorted(timetab)
-
-        disptab = []
+        displaytable = []
         for i in range(8):
-            disptab.append([])
-            for j in range(len(timetab) + 1):
-                disptab[i].append('')
-        
-        for d in Day:
-            disptab[d.value][0] = str(d)
+            displaytable.append([])
+            for j in range(len(timetable) + 1):
+                displaytable[i].append('')      
 
-        for c, t in enumerate(timetab):
-            disptab[0][c + 1] = f'{t.printStartTime()}-{t.printEndTime()}'
+        for c, t in enumerate(timetable):
+            displaytable[0][c + 1] = f'{t.printStartTime()}-{t.printEndTime()}'
+
+        for d in Day:
+            displaytable[d.value][0] = str(d)
 
         for les in list(self.lesson_dict.values()):
-            tstr = f'{les.term.printStartTime()}-{les.term.printEndTime()}'            
-            disptab[les.term.day.value][timetab.index(les.term) + 1] = les.name
-
+            t_string = f'{les.term.printStartTime()}-{les.term.printEndTime()}'            
+            displaytable[les.term.day.value][timetable.index(les.term) + 1] = les.name
 
         for bre in self.breaks:
-            tstr = f'{bre.term.printStartTime()}-{bre.term.printEndTime()}'
+            t_string = f'{bre.term.printStartTime()}-{bre.term.printEndTime()}'
             for i in range(1, 8):
-                disptab[i][timetab.index(tstr) + 1] = f'------'
+                displaytable[i][timetable.index(t_string) + 1] = f'------'
 
-        b = ''
-        bl = f'\n{b: ^12}{b:*^92}\n'
-        em = f'{b: ^12}'
-
-        finstr = ''
-        for tc in range(len(timetab) + 1):
+        return_string = ''
+        for tc in range(len(timetable) + 1):
             for dc in range(8):
-                finstr += f'{disptab[dc][tc]: ^12}*'
-            finstr += bl
+                return_string += f'{displaytable[dc][tc]: ^12}*'
+            return_string += line
 
-        return finstr
+        return return_string
         
