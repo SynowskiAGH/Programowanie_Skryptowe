@@ -10,9 +10,9 @@ class Lesson():
         self.__teacherName = teacherName
         self.__teacher = None
         self.__year = year
-        self.__full_time = self.calcFTValue()
+        self.__full_time = self.term_check()
 
-    def calcFTValue(self):
+    def term_check(self):
         if self.__term.day.value < 5:
             return True
         elif self.__term.day.value > 5:
@@ -26,38 +26,38 @@ class Lesson():
     @property
     def teacher(self):
         return self.__teacher
-
-    @teacher.setter
-    def teacher(self, value):
-        self.__teacher = value
-
-    def __add__(self, value):
-        if type(value) is Teacher:
-            new_time = value.time + self.__term.duration
-            if new_time <= 270:
-                value.time = new_time
-                self.__teacher = None #Usuwanie teachera
-                self.__teacher = value #Nadpisywanie teachera
-        return self.__teacher
-
-    def __sub__(self, value):
-        if type(value) is Teacher:
-            new_time = value.time - self.__term.duration
-            value.time = new_time
-            self.__teacher = None
-        return self.__teacher
         
     @property
     def timetable(self):
         return self.__timetable
 
-    @timetable.setter
-    def timetable(self, value):
-        self.__timetable = value
-
     @property
     def term(self):
         return self.__term
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def teacherName(self):
+        return self.__teacherName
+
+    @property
+    def year(self):
+        return self.__year
+
+    @property
+    def full_time(self):
+        return self.__full_time
+
+    @teacher.setter
+    def teacher(self, value):
+        self.__teacher = value
+
+    @timetable.setter
+    def timetable(self, value):
+        self.__timetable = value
 
     @term.setter
     def term(self, value):
@@ -66,10 +66,6 @@ class Lesson():
         else:
             self.__term = value
 
-    @property
-    def name(self):
-        return self.__name
-
     @name.setter
     def name(self, value):
         if type(value) is not str:
@@ -77,20 +73,12 @@ class Lesson():
         else:
             self.__term = value
 
-    @property
-    def teacherName(self):
-        return self.__teacherName
-
     @teacherName.setter
     def teacherName(self, value):
         if type(value) is not str:
             raise TypeError('teacherName musi być typu \'str\'')
         else:
             self.__teacherName = value
-
-    @property
-    def year(self):
-        return self.__year
     
     @year.setter
     def year(self, value):
@@ -100,110 +88,6 @@ class Lesson():
             raise ValueError('rok musi być liczbą dodatnią')
         else:
             self.__year = value
-
-    @property
-    def full_time(self):
-        return self.__full_time
-
-    def earlierDay(self):
-        ndv = self.__term.day.value - 1
-
-        if ndv < 1:
-            return False
-
-        nd = Day(ndv)
-        nt = Term(self.__term.hour, self.__term.minute, nd)
-
-        if not self.timetable.can_be_transferred_to(nt, self.full_time):
-            return False
-
-        self.__term.day = nd 
-        return True
-
-    def laterDay(self):
-        ndv = self.__term.day.value + 1
-
-        if ndv > 7:
-            return False
-
-        nd = Day(ndv)
-        nt = Term(self.__term.hour, self.__term.minute, nd)
-
-        if not self.timetable.can_be_transferred_to(nt, self.full_time):
-            return False
-
-        self.__term.day = nd
-        return True
-
-    def earlierTime(self):
-        h_dif = self.__term.duration // 60
-        m_dif = self.__term.duration % 60
-
-        if self.__term.minute - m_dif < 0:
-            m_dif -= 60
-            h_dif += 1
-
-        nt = Term(self.__term.hour - h_dif, self.__term.minute - m_dif, self.__term.day)
-
-        if hasattr(self.timetable, 'breaks'):
-            if not self.timetable.skipBreaks:
-                bo = self.timetable.overlapsBreak(nt)
-                if bo:
-                    return False
-            else:
-                bo = self.timetable.overlapsBreak(nt)
-                if bo:
-                    h_dif += bo[1] // 60
-                    m_dif += bo[1] % 60
-
-                    if self.__term.minute - m_dif < 0:
-                        m_dif -= 60
-                        h_dif += 1
-
-                    nt = Term(self.__term.hour - h_dif, self.__term.minute - m_dif, self.__term.day)
-
-        if not self.timetable.can_be_transferred_to(nt, self.full_time):
-            return False
-
-        self.__term.hour -= h_dif
-        self.__term.minute -= m_dif
-        return True
-
-
-    def laterTime(self):
-        h_dif = self.__term.duration // 60
-        m_dif = self.__term.duration % 60
-
-        if self.__term.minute + m_dif >= 60:
-            m_dif -= 60
-            h_dif += 1
-
-        nt = Term(self.__term.hour + h_dif, self.__term.minute + m_dif, self.__term.day)
-
-        if hasattr(self.timetable, 'breaks'):
-            if not self.timetable.skipBreaks:
-                bo = self.timetable.overlapsBreak(nt)
-                if bo:
-                    return False
-            else:
-                bo = self.timetable.overlapsBreak(nt)
-                if bo:
-                    h_dif += bo[1] // 60
-                    m_dif += bo[1] % 60
-
-                    if self.__term.minute - m_dif < 0:
-                        m_dif -= 60
-                        h_dif += 1
-
-                    nt = Term(self.__term.hour - h_dif, self.__term.minute - m_dif, self.__term.day)
-
-        if not self.timetable.can_be_transferred_to(nt, self.full_time):
-            return False
-
-        self.__term.hour += h_dif
-        self.__term.minute += m_dif
-        return True
-
 
     def __str__(self):
         if self.__year == 1:
@@ -229,3 +113,126 @@ class Lesson():
         return (f'{self.__name} ({self.__term.day} {self.__term.printStartTime()}-{self.__term.printEndTime()})\n'
                 f'{year_str} studiów {time_str}\n'
                 f'Prowadzący: {self.__teacherName}')
+
+    def __add__(self, value):
+        if type(value) is Teacher:
+            new_time = value.time + self.__term.duration
+            if new_time <= 270:
+                value.time = new_time
+                self.__teacher = None #Usuwanie teachera
+                self.__teacher = value #Nadpisywanie teachera
+        return self.__teacher
+
+    def __sub__(self, value):
+        if type(value) is Teacher:
+            new_time = value.time - self.__term.duration
+            value.time = new_time
+            self.__teacher = None
+        return self.__teacher
+
+
+
+    def earlierDay(self):
+        new_day_value = self.__term.day.value - 1
+
+        if new_day_value < 1:
+            return False
+
+        new_day = Day(new_day_value)
+        nt = Term(self.__term.hour, self.__term.minute, new_day)
+
+        if not self.timetable.can_be_transferred_to(nt, self.full_time):
+            return False
+
+        self.__term.day = new_day 
+        return True
+
+    def laterDay(self):
+        new_day_value = self.__term.day.value + 1
+
+        if new_day_value > 7:
+            return False
+
+        new_day = Day(new_day_value)
+        new_term = Term(self.__term.hour, self.__term.minute, new_day)
+
+        if not self.timetable.can_be_transferred_to(new_term, self.full_time):
+            return False
+
+        self.__term.day = new_day
+        return True
+
+    def earlierTime(self):
+        hour_diff = self.__term.duration // 60
+        min_diff = self.__term.duration % 60
+
+        if self.__term.minute - min_diff < 0:
+            min_diff -= 60
+            hour_diff += 1
+
+        new_term = Term(self.__term.hour - hour_diff, self.__term.minute - min_diff, self.__term.day)
+
+        if hasattr(self.timetable, 'breaks'):
+            if not self.timetable.skipBreaks: #skipbreaks = false
+                overlaps_bool = self.timetable.overlapsBreak(new_term) #Sprawdzam, czy najeżdżam na przerwy
+
+                if overlaps_bool: #Jeśli najeżdżam, to zwracam false
+                    return False
+            else:
+                overlaps_bool = self.timetable.overlapsBreak(new_term) #Skipbreaks = true
+
+                if overlaps_bool:
+
+                    hour_diff += overlaps_bool[1] // 60 #mechanizm przenoszenia przez przerwę
+                    min_diff += overlaps_bool[1] % 60
+
+                    if self.__term.minute - min_diff < 0:
+                        min_diff -= 60
+                        hour_diff += 1
+
+                    new_term = Term(self.__term.hour - hour_diff, self.__term.minute - min_diff, self.__term.day)
+
+        if not self.timetable.can_be_transferred_to(new_term, self.full_time):
+            return False
+
+        self.__term.hour -= hour_diff
+        self.__term.minute -= min_diff
+        return True
+
+
+    def laterTime(self):
+        hour_diff = self.__term.duration // 60
+        min_diff = self.__term.duration % 60
+
+        if self.__term.minute + min_diff >= 60:
+            min_diff -= 60
+            hour_diff += 1
+
+        new_term = Term(self.__term.hour + hour_diff, self.__term.minute + min_diff, self.__term.day)
+
+        if hasattr(self.timetable, 'breaks'):
+            if not self.timetable.skipBreaks: #skipbreaks = false
+                overlaps_bool = self.timetable.overlapsBreak(new_term)  #Sprawdzam, czy najeżdżam na przerwy
+                
+                if overlaps_bool: #Jeśli najeżdżam, to zwracam false
+                    return False
+
+            else:
+                overlaps_bool = self.timetable.overlapsBreak(new_term) #Skipbreaks = true
+                
+                if overlaps_bool:
+                    hour_diff += overlaps_bool[1] // 60 #mechanizm przenoszenia przez przerwę
+                    min_diff += overlaps_bool[1] % 60
+
+                    if self.__term.minute - min_diff < 0:
+                        min_diff -= 60
+                        hour_diff += 1
+
+                    new_term = Term(self.__term.hour - hour_diff, self.__term.minute - min_diff, self.__term.day)
+
+        if not self.timetable.can_be_transferred_to(new_term, self.full_time):
+            return False
+
+        self.__term.hour += hour_diff
+        self.__term.minute += min_diff
+        return True
