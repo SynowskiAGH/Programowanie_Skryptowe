@@ -10,6 +10,16 @@ class BasicTerm():
     def hour(self):
         return self.__hour
 
+    @property
+    def minute(self):
+        return self.__minute
+
+    @property
+    def duration(self):
+        return self.__duration
+
+
+
     @hour.setter
     def hour(self, value):
         if type(value) is not int:
@@ -18,10 +28,6 @@ class BasicTerm():
             raise ValueError('Godzina musi należeć do przedziału 0 - 23')
         else:
             self.__hour = value
-
-    @property
-    def minute(self):
-        return self.__minute
 
     @minute.setter
     def minute(self, value):
@@ -32,10 +38,6 @@ class BasicTerm():
         else:
             self.__minute = value
 
-    @property
-    def duration(self):
-        return self.__duration
-
     @duration.setter
     def duration(self, value):
         if type(value) is not int:
@@ -44,6 +46,12 @@ class BasicTerm():
             raise ValueError('Duration musi być dodatnie')
         else:
             self.__duration = value
+
+
+    def __str__(self):
+        return(f"{self.__hour}:{self.__minute} [{self.__duration}]")
+
+
 
     def __lt__(self, other):
         return self.earlierThan(self, other)
@@ -61,8 +69,14 @@ class BasicTerm():
         return self.laterThan(self, other)
 
 
+
+
     def getStartTime(self):
         return (self.hour, self.minute)
+    
+    def getCompTime(self):
+        et = self.getEndTime()
+        return (self.hour, self.minute, et[0], et[1])
 
     def getEndTime(self):
         add_hour = self.__duration // 60
@@ -76,30 +90,28 @@ class BasicTerm():
         end_hour = self.__hour + add_hour
 
         return (end_hour, end_min)
-    
-    def getCompTime(self):
-        et = self.getEndTime()
-        return (self.hour, self.minute, et[0], et[1])
 
     def printEndTime(self):
-        timeTuple = self.getEndTime()
-        return f'{timeTuple[0]:0>2}:{timeTuple[1]:0>2}'
+        time_end = self.getEndTime()
+        return f'{time_end[0]:0>2}:{time_end[1]:0>2}'
 
     def printStartTime(self):
         return f'{self.__hour:0>2}:{self.__minute:0>2}'
 
-    def __str__(self):
-        return(f"{self.__hour}:{self.__minute} [{self.__duration}]")
+
+
 
     def laterThan(self, Termin):
         if Day.difference(self.__day, Termin.day) < 0:
             return True
+
         if Day.difference(self.__day, Termin.day) == 0:
             if Termin.hour < self.__hour:
                 return True
             elif Termin.hour == self.__hour and Termin.minute < self.__minute:
                 return True
             return False
+
         return False
 
     def equals (self, Termin):
@@ -108,10 +120,13 @@ class BasicTerm():
     def earlierThan(self, Termin):
         if Day.difference(self.__day, Termin.day) > 0:
             return True
+
         elif Day.difference(self.__day, Termin.day) == 0:
             if Termin.hour > self.__hour:
                 return True
             elif Termin.hour == self.__hour and Termin.minute > self.__minute:
                 return True
             return False
+            
         return False
+
