@@ -100,7 +100,7 @@ class Test_Timetable2(unittest.TestCase):
         tt = Timetable2(b)
         tt1 = Timetable2(b)
         ter = Term(8, 0, Day.WED)
-        les1 = Lesson(tt1, ter, 'less1', 'less1', 2)
+        les1 = Lesson(tt1, ter, 'lesson1', 'lesson1', 2)
         actl = [Action.DAY_EARLIER, Action.DAY_LATER, Action.TIME_EARLIER, Action.TIME_LATER]
         tt.put(les1)
         tt1.skipBreaks = True
@@ -113,7 +113,7 @@ class Test_Timetable2(unittest.TestCase):
         tt = Timetable2(b)
         tt1 = Timetable2(b)
         ter = Term(8, 0, Day.WED)
-        les1 = Lesson(tt1, ter, 'less1', 'less1', 2)
+        les1 = Lesson(tt1, ter, 'lesson1', 'lesson1', 2)
         actl = [Action.DAY_EARLIER, Action.DAY_LATER, Action.TIME_EARLIER, Action.TIME_LATER]
         tt.put(les1)
         tt1.skipBreaks = False
@@ -135,7 +135,7 @@ class Test_Timetable2(unittest.TestCase):
         b = [Break(BasicTerm(9, 30, 5)), Break(BasicTerm(11, 5, 10))]
         tt = Timetable2(b)
         strl = ['d-', 'd+', 't-', 't+', 'monkas', 'pogchamp']
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError): #Test na value error
             tt.parse(strl)
 
 
