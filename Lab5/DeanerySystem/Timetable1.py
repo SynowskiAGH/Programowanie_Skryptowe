@@ -76,10 +76,13 @@ class Timetable1:
 
             if les_end > ter_start and les_end < ter_end:
                 return True #Jeśli lekcja znajduje się wokół termu to true
+            
             if ter_end > les_start and ter_end < les_end:
                 return True #Jeśli lekcja znajduje się wewnątrz termu to true
+            
             if les_start > ter_start and les_start < ter_end:
                 return True #Jeżel lekcja otwarta od lewej zamknięta od prawej
+            
             if ter_start > les_start and ter_start < les_end:
                 return True #Jeżeli otwarta od prawej, zamknięta od lewej
 
@@ -100,10 +103,12 @@ class Timetable1:
 
         if type(lesson) is not Lesson:
             raise TypeError('Argument \'put()\' musi być typu \'Lesson\'')
+        
         else:
             if self.busy(lesson.term):
                 return False
             self.lesson_list.append(lesson) 
+            
             return True #Jeśli nie jest busy to dodajemy i zwracamy true 
 
 
@@ -122,8 +127,10 @@ class Timetable1:
 
         action_list = []
         for ac in actions:
+            
             if ac in Action._value2member_map_: #Jeśli ac znajduje się w liście stringów z action.py
                 action_list.append(Action(ac)) #Zapisz ac do listy akcji
+        
         return action_list
 
     def perform(self, actions: List[Action]):
@@ -136,12 +143,16 @@ class Timetable1:
         """
         lc = 0
         for ac in actions: #Wybieramy z listy akcji
+            
             if ac == Action.DAY_EARLIER:
                 self.lesson_list[lc].earlierDay()
+
             elif ac == Action.DAY_LATER:
                 self.lesson_list[lc].laterDay()
+
             elif ac == Action.TIME_EARLIER:
                 self.lesson_list[lc].earlierTime()
+
             elif ac == Action.TIME_LATER:
                 self.lesson_list[lc].laterTime()
 
@@ -150,13 +161,16 @@ class Timetable1:
 
     def __str__(self):
         timetab = [] #tworzę timetab
+
         for les in self.lesson_list: 
             timetab.append(les.term) #Iteruje przez lekcje i dodaje do timetaba czas ich rozpoczęcia
         timetab = sorted(timetab, key=lambda t: t.printStartTime()) #Sortuje przez godzinę rozpoczęcia
 
         disptab = [] #Tablica display
+
         for i in range(8): # 1-7
             disptab.append([])
+
             for j in range(len(timetab) + 1): # 1-(n+1)godzin w timetab
                 disptab[i].append('') # ??? Puste pole dla disptab X = [1 - 7] ???
         
@@ -175,8 +189,10 @@ class Timetable1:
 
         finstr = '' #finished string (?)
         for tc in range(len(timetab) + 1): #Dla każdego czasu w liście timetab:
+            
             for dc in range(8): #Dla każdego dnia:
                 finstr += f'{disptab[dc][tc]: ^12}*' # ^ - centrowanie zawartości tablicy (width=12) - gwiazdka na koniec
+            
             finstr += bl #Co każdy term dodaje linie
 
         return finstr #zwraca finstr
@@ -197,7 +213,9 @@ class Timetable1:
         
         ltr = None
         for les in self.lesson_list:
+            
             if les.term == term:
                 ltr = les
                 break
+
         return ltr
