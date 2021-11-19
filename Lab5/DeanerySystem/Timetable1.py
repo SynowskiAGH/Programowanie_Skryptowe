@@ -12,6 +12,45 @@ class Timetable1:
     def __init__(self):
         self.lesson_list = []
 
+
+    def __str__(self):
+        timetab = [] #tworzę timetab\
+        space = '' # spacja
+        bl = f'\n{space: ^12}{space:*^92}\n' # bl -> 12 przerw i 92 gwiazdki :3
+
+        for les in self.lesson_list: 
+            timetab.append(les.term) #Iteruje przez lekcje i dodaje do timetaba czas ich rozpoczęcia
+        timetab = sorted(timetab, key=lambda t: t.printStartTime()) #Sortuje przez godzinę rozpoczęcia
+
+        displaytable = [] #Tablica display
+
+        for i in range(8): # 1-7
+            displaytable.append([])
+
+            for j in range(len(timetab) + 1): # 1-(n+1)godzin w timetab
+                displaytable[i].append('') #Puste pole dla displaytable X = [1 - 7] ???
+        
+        for d in Day: #Wypisuje dni tygodnia jako pole X tablicy 2-wymiarowej (1|0-pon, 2|0-wt, 3|0-sr itd.)
+            displaytable[d.value][0] = str(d)
+
+        for c, t in enumerate(timetab): #iteruje po możliwych terminach -> 0 - pierwszy termin(c i t na raz czy oddzielnie?)
+            displaytable[0][c + 1] = f'{t.printStartTime()}-{t.printEndTime()}' #od [0][1] wpisuje odpowiednio starttime i endtime
+
+        for les in self.lesson_list: #Dla każdej lekcji w liście
+            displaytable[les.term.day.value][timetab.index(les.term) + 1] = les.name #disptab[1][index posortowanego terma+1] <- nazwa lekcji
+
+
+        exit_string = '' #finished string 
+        for tc in range(len(timetab) + 1): #Dla każdego czasu w liście timetab:
+            
+            for dc in range(8): #Dla każdego dnia:
+                exit_string += f'{displaytable[dc][tc]: ^12}*' # ^ - centrowanie zawartości tablicy (width=12) - gwiazdka na koniec
+            
+            exit_string += bl #Co każdy term dodaje linie
+
+        return exit_string #zwraca finstr
+
+
     def can_be_transferred_to(self, term: Term, full_time: bool) -> bool:
         """
         Informs whether a lesson can be transferred to the given term
@@ -37,17 +76,21 @@ class Timetable1:
             return False
 
         if not self.busy(term):
+
             if term.day.value < 5: #Jeśli pon-piątek full term
-                is_ft = True
+                is_FullTime = True
+
             elif term.day.value > 5: #sob-nie nie full term
-                is_ft = False
+                is_FullTime = False
+
             else:
                 if term.hour < 17: #przed 17
-                    is_ft = True
-                else:
-                    is_ft = False  #po 17
+                    is_FullTime = True
 
-            if is_ft == full_time:
+                else:
+                    is_FullTime = False  #po 17
+
+            if is_FullTime == full_time:
                 return True
         return False
 
@@ -159,45 +202,6 @@ class Timetable1:
             lc += 1 #+1 pozycja w liście
             lc %= len(self.lesson_list) #Powrót do zerowej pozycji (gdyby ac było dłuższe od lc)
 
-    def __str__(self):
-        timetab = [] #tworzę timetab
-
-        for les in self.lesson_list: 
-            timetab.append(les.term) #Iteruje przez lekcje i dodaje do timetaba czas ich rozpoczęcia
-        timetab = sorted(timetab, key=lambda t: t.printStartTime()) #Sortuje przez godzinę rozpoczęcia
-
-        disptab = [] #Tablica display
-
-        for i in range(8): # 1-7
-            disptab.append([])
-
-            for j in range(len(timetab) + 1): # 1-(n+1)godzin w timetab
-                disptab[i].append('') # ??? Puste pole dla disptab X = [1 - 7] ???
-        
-        for d in Day: #Wypisuje dni tygodnia jako pole X tablicy 2-wymiarowej (1|0-pon, 2|0-wt, 3|0-sr itd.)
-            disptab[d.value][0] = str(d)
-
-        for c, t in enumerate(timetab): #iteruje po możliwych terminach -> 0 - pierwszy termin(c i t na raz czy oddzielnie?)
-            disptab[0][c + 1] = f'{t.printStartTime()}-{t.printEndTime()}' #od [0][1] wpisuje odpowiednio starttime i endtime
-
-        for les in self.lesson_list: #Dla każdej lekcji w liście
-            disptab[les.term.day.value][timetab.index(les.term) + 1] = les.name #disptab[1][index posortowanego terma+1] <- nazwa lekcji
-
-        b = '' # spacja
-        bl = f'\n{b: ^12}{b:*^92}\n' # bl -> 12 przerw i 92 gwiazdki :3
-        em = f'{b: ^12}' # em? nie widzi tego lmao?
-
-        finstr = '' #finished string (?)
-        for tc in range(len(timetab) + 1): #Dla każdego czasu w liście timetab:
-            
-            for dc in range(8): #Dla każdego dnia:
-                finstr += f'{disptab[dc][tc]: ^12}*' # ^ - centrowanie zawartości tablicy (width=12) - gwiazdka na koniec
-            
-            finstr += bl #Co każdy term dodaje linie
-
-        return finstr #zwraca finstr
-        
-
     def get(self, term: Term) -> Lesson: #funckja getująca
         """
         Get object (lesson) indicated by the given term.
@@ -211,11 +215,11 @@ class Timetable1:
             The lesson object or None if the term is free
         """
         
-        ltr = None
+        getter = None
         for les in self.lesson_list:
             
             if les.term == term:
-                ltr = les
+                getter = les
                 break
 
-        return ltr
+        return getter
