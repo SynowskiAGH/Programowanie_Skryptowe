@@ -3,8 +3,9 @@ from DeanerySystem.basicterm import BasicTerm
 
 class Term(BasicTerm):
     def __init__(self, hour, minute, day: Day = Day.MON,  duration: int = 90): #Konstruktor
-        super().__init__(hour, minute, duration)
         self.__day = day
+        super().__init__(hour, minute, duration)
+
 
     @property
     def day(self):
@@ -38,11 +39,14 @@ class Term(BasicTerm):
     def laterThan(self, Termin):
         if Day.difference(self.__day, Termin.day) < 0:
             return True
+        
         if Day.difference(self.__day, Termin.day) == 0:
             if Termin.hour < self.hour:
                 return True
+            
             elif Termin.hour == self.hour and Termin.minute < self.minute:
                 return True
+            
             return False
         return False
 
@@ -50,12 +54,16 @@ class Term(BasicTerm):
         return True if Day.difference(self.__day, Termin.day) == 0 and Termin.hour == self.hour and Termin.minute == self.minute and Termin.duration == self.duration else False
     
     def earlierThan(self, Termin):
+
         if Day.difference(self.__day, Termin.day) > 0:
             return True
+
         elif Day.difference(self.__day, Termin.day) == 0:
             if Termin.hour > self.hour:
                 return True
+            
             elif Termin.hour == self.hour and Termin.minute > self.minute:
                 return True
+            
             return False
-        return False
+        return False 
