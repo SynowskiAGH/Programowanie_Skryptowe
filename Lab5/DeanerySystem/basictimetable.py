@@ -47,20 +47,20 @@ class BasicTimetable:
         return ltr
 
     def perform(self, actions: List[Action]):
-        lc = 0
+        x = 0
         for ac in actions:
 
             if ac == Action.DAY_EARLIER:
-                list(self.lesson_dict.values())[lc].earlierDay()
+                list(self.lesson_dict.values())[x].earlierDay()
 
             elif ac == Action.DAY_LATER:
-                list(self.lesson_dict.values())[lc].laterDay()
+                list(self.lesson_dict.values())[x].laterDay()
 
             elif ac == Action.TIME_EARLIER:
-                list(self.lesson_dict.values())[lc].earlierTime()
+                list(self.lesson_dict.values())[x].earlierTime()
 
             elif ac == Action.TIME_LATER:
-                list(self.lesson_dict.values())[lc].laterTime()
+                list(self.lesson_dict.values())[x].laterTime()
 
-            lc += 1
-            lc %= len(list(self.lesson_dict.values()))
+            x += 1
+            x %= len(list(self.lesson_dict.values()))
