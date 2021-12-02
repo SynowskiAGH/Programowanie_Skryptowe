@@ -1,0 +1,105 @@
+h1 {
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-weight: bold;
+    font-size: 3em;
+    margin: 5px;
+}
+
+nav {
+    float: left;
+}
+
+nav ul {
+    margin: 20px 0px;
+}
+
+nav li {
+    width: 80px;
+    margin-left: 10px;
+}
+
+aside {    /* Specyfikacja wyglądu */
+    float: right;
+    width: 550px;
+    padding: 5px;
+}
+
+aside h1 {
+    margin: 0;
+    font-size: 2em;
+    animation-name: iceandfire;
+    animation-duration: 2s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+aside h2 {
+    margin: 0;
+    font-size: 2em;
+}
+
+main {    /* Specyfikacja wyglądu */
+    float: left;
+    width: 500px;
+    clear: left;
+    padding: 10px;
+    padding-bottom: 40px;
+}
+
+main h1 {
+    margin: 0;
+}
+
+main pre {
+    margin: 0;
+    overflow-x: auto;
+}
+
+footer {    /* Specyfikacja wyglądu */
+    clear: both;
+    padding: 10px;
+}
+
+.azure {
+    background-color: azure;
+}
+
+.bbox {
+    border: 2px solid #a8a8a8;
+    box-shadow: 0px 0px 10px black;
+    margin: 10px;
+}
+
+
+@keyframes iceandfire {
+    from {
+        color: red;
+    }
+
+    to {
+        color: blue;
+    }
+}
+
+@media screen and (max-aspect-ratio: 9/16){ /* Wszystko poniżej AR 9/16 */
+
+    body {
+        margin: 0;
+    }
+    
+    aside,
+    header,
+    footer,
+    main,
+    nav {
+        box-sizing: border-box; /* rozszerzenie sajzu do bordera */
+        width: 100vw;
+        float: none;
+    }
+    
+    .bbox {
+        border: 2px solid #a8a8a8;
+        box-shadow: 0px 0px 10px black;
+        margin: 10px 0; /* 2 wartości -> góra/dół i lewo/prawo */
+    }
+}
