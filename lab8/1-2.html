@@ -1,0 +1,29 @@
+<html>
+  <body onLoad="
+            console.log('Tekst 1');
+            window.alert('Tekst 2');
+            /* document.write('Tekst 3'); -- problematyczna linijka */
+">
+
+    <script>
+    window.prompt("Tekst1", "Tekst 2") /* Druga część nie jest wymagana         
+    // zwroty:
+        // - string dla liczby i OK/Enter
+        // - string dla tekstu i OK/Enter
+        // - pusty string dla tekstu i OK/Enter
+        // - obiekt null dla Anuluj
+        */;
+    </script>
+
+    <form>
+    <input name="pole_tekstowe" type="text">
+    <input name="pole_liczbowe" type="number">
+    <input type="button" value="Wypisz">
+    </form>
+
+    <div>Treść dokumentu HTML</div> 
+    <div>Treść dokumentu HTML</div>
+    <div>Treść dokumentu HTML</div>
+
+  </body>
+</html>
