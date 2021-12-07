@@ -1,0 +1,30 @@
+1-1 - Co robią poszczególne linijki?
+
+1-2 - Która linijka jest problematyczna?
+    - Dodaj <script> - Czy obie części są potrzebne?
+    - Dopisz w obrębie elementu "body"
+
+1-3 - Zbadaj co jest zwracane
+
+1-4 - Zbadaj jakie dane są zwracane
+
+1-5 - Script w JS
+
+
+
+2 -> Testy mocha
+        Funkcja cyfry(napis), dla wczytanego napisu, oblicza, a następnie zwraca sumę zawartych w nim cyfr
+        Funkcja litery(napis), oblicza, a następnie zwraca ilość zawartych w nim liter
+        Funkcja suma(napis), oblicza, na bieżąco, sumę wszystkich wczytanych liczb, o ile napis wygląda jak liczba, tzn. rozpoczyna się od ciągu cyfr (patrz linia 3 przykładu) lub zawiera same cyfry (patrz linia 1 przykładu)
+        Wczytywanie danych ma się odbywać do momentu naciśnięcia przycisku 'Anuluj'
+
+        Zaimplementuj test, w oparciu o Mocha, weryfikujący poprawność działania powyższych funkcji, dla napisów zawierających:
+            Same cyfry
+            Same litery
+            Litery, a po nich cyfry
+            Cyfry, a po nich litery
+            Pusty napis
+
+
+3 -> Dlaczego na powierzchni płótna nie pojawił się napis "Hello World"?
+     Narysuj trzy figury: koło, trójkąt, prostokąt
