@@ -20,14 +20,14 @@ var total = 0
 function cyfry(napis) {
     var nums = napis.replace(/[^0-9]/g, '') /* wszystkie cyfry g - global */
     nums = nums.split('') /* splituje te cyfry */
-    nums.map(function(n) {
+    nums.map(function(n) { /* Zwraca mi sparsowany array pojedynczych cyfr */
         return parseInt(n)
     })
 
     if (nums.length == 0)
         return 0
 
-    var sum = nums.reduce(function(total, num) {
+    var sum = nums.reduce(function(total, num) { /* array.reduce(function(total, num = currvalue)) */
         return parseInt(total) + parseInt(num)
     })
 
@@ -43,7 +43,7 @@ function litery(napis) {
 }
 
 function suma(napis) {
-    var nn = parseInt(napis) /* parsuje każdy znak na string i zwraca jako int albo NaN */
+    var nn = parseInt(napis) /* parsuje każdy znak na string i zwraca pierwszy int lub NaN */
     if (!isNaN(nn))
         total += nn
     return total
