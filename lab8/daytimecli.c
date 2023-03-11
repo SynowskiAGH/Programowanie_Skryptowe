@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <errno.h>
 
 #define MAXLINE 1023
 #define SA      struct sockaddr
