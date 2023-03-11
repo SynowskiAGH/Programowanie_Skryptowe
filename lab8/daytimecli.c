@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+#include <arpa/inet.h>
 
 #define MAXLINE 1023
 #define SA      struct sockaddr
