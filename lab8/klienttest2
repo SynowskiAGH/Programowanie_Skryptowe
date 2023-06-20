@@ -120,3 +120,22 @@ void handleMulticast(int udpSocket) {
         printf("Received from multicast: %s\n", buffer);
     }
 }
+
+    // Configure multicast address
+    struct sockaddr_in multicastAddr;
+    memset(&multicastAddr, 0, sizeof(multicastAddr));
+    multicastAddr.sin_family = AF_INET;
+    multicastAddr.sin_port = htons(UDP_PORT);
+    if (inet_aton(MULTICAST_GROUP, &multicastAddr.sin_addr) == 0) {
+        perror("Invalid multicast address");
+        exit(EXIT_FAILURE);
+    }
+
+    // Join the multicast group
+    struct ip_mreq multicastRequest;
+    multicastRequest.imr_multiaddr.s_addr = inet_addr(MULTICAST_GROUP);
+    multicastRequest.imr_interface.s_addr = htonl(INADDR_ANY);
+    if (setsockopt(udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&multicastRequest, sizeof(multicastRequest)) < 0) {
+        perror("Joining multicast group failed");
+        exit(EXIT_FAILURE);
+    }
