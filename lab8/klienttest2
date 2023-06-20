@@ -4,142 +4,121 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <netinet/in.h>
 
 #define TCP_PORT 8080             // TCP server port
 #define UDP_PORT 9090             // UDP multicast server port
 #define MULTICAST_GROUP "239.0.0.1"
 #define BUFFER_SIZE 1024
 
-void handleTCPChat(int tcpSocket);
-void handleUDPChat(int udpSocket);
+void handleServerMessages(int udpSocket);
 
 int main() {
     int tcpSocket, udpSocket;
-    struct sockaddr_in serverAddr;
-    char tcpBuffer[BUFFER_SIZE];
+    struct sockaddr_in serverAddress;
+    char buffer[BUFFER_SIZE];
+    int bytesRead;
 
     // Create TCP socket
-    if ((tcpSocket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror("TCP socket creation failed");
+    tcpSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (tcpSocket == -1) {
+        perror("Error creating TCP socket");
         exit(EXIT_FAILURE);
     }
 
-    // Create UDP socket
-    if ((udpSocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-        perror("UDP socket creation failed");
+    // Set up server address
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(TCP_PORT);
+    if (inet_aton("127.0.0.1", &serverAddress.sin_addr) == 0) {
+        perror("Invalid server address");
         exit(EXIT_FAILURE);
     }
 
-    // Configure server address for TCP connection
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = INADDR_ANY;
-    serverAddr.sin_port = htons(TCP_PORT);
-
-    // Connect to the server via TCP
-    if (connect(tcpSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
+    // Connect to the server
+    if (connect(tcpSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0) {
         perror("TCP connection failed");
         exit(EXIT_FAILURE);
     }
 
-    // Create a new thread to handle the TCP chat
-    if (fork() == 0) {
-        handleTCPChat(tcpSocket);
-        exit(EXIT_SUCCESS);
+    printf("Connected to the server.\n");
+
+    // Create UDP socket
+    udpSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (udpSocket == -1) {
+        perror("Error creating UDP socket");
+        exit(EXIT_FAILURE);
     }
 
-    // Join the UDP multicast group
+    // Join the multicast group
     struct ip_mreq multicastRequest;
     multicastRequest.imr_multiaddr.s_addr = inet_addr(MULTICAST_GROUP);
     multicastRequest.imr_interface.s_addr = htonl(INADDR_ANY);
-    if (setsockopt(udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &multicastRequest, sizeof(multicastRequest)) == -1) {
+    if (setsockopt(udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&multicastRequest, sizeof(multicastRequest)) < 0) {
         perror("Joining multicast group failed");
         exit(EXIT_FAILURE);
     }
 
-    // Create a new thread to handle the UDP chat
+    // Fork a child process to handle server messages
     if (fork() == 0) {
-        handleUDPChat(udpSocket);
+        close(tcpSocket);  // Child process doesn't need the TCP socket
+        handleServerMessages(udpSocket);
+        close(udpSocket);
         exit(EXIT_SUCCESS);
+    } else {
+        close(udpSocket);  // Parent process doesn't need the UDP socket
     }
 
-    printf("Connected to the server. Start typing messages:\n");
-
+    // Send messages to the server
     while (1) {
-        // Read message from stdin
-        if (fgets(tcpBuffer, BUFFER_SIZE, stdin) == NULL) {
-            perror("Failed to read input");
-            break;
+        printf("Enter a message: ");
+        fgets(buffer, BUFFER_SIZE, stdin);
+
+        // Remove the newline character from the input
+        buffer[strcspn(buffer, "\n")] = '\0';
+
+        // Send the message to the server
+        if (send(tcpSocket, buffer, strlen(buffer), 0) < 0) {
+            perror("Error sending message to server");
+            exit(EXIT_FAILURE);
         }
 
-        // Remove newline character from the end of the message
-        tcpBuffer[strcspn(tcpBuffer, "\n")] = '\0';
-
-        // Send the message over TCP to the server
-        ssize_t bytesSent = send(tcpSocket, tcpBuffer, strlen(tcpBuffer), 0);
-        if (bytesSent == -1) {
-            perror("TCP send failed");
+        // Check for the "exit" command to terminate the client
+        if (strcmp(buffer, "exit") == 0)
             break;
-        }
 
-        // If the message is "/quit", exit the loop and terminate the client
-        if (strcmp(tcpBuffer, "/quit") == 0) {
-            break;
-        }
+        // Clear the buffer
+        memset(buffer, 0, BUFFER_SIZE);
     }
 
-    // Close sockets
+    // Close the TCP socket
     close(tcpSocket);
-    close(udpSocket);
 
     return 0;
 }
 
-void handleTCPChat(int tcpSocket) {
-    char tcpBuffer[BUFFER_SIZE];
+void handleServerMessages(int udpSocket) {
+    struct sockaddr_in serverAddress;
+    char buffer[BUFFER_SIZE];
+    socklen_t serverAddressLength;
+    int bytesRead;
 
     while (1) {
-        // Receive message over TCP from the server
-        ssize_t bytesRead = recv(tcpSocket, tcpBuffer, BUFFER_SIZE - 1, 0);
-        if (bytesRead == -1) {
-            perror("TCP receive failed");
-            break;
-        } else if (bytesRead == 0) {
-            printf("Disconnected from the server.\n");
-            break;
+        serverAddressLength = sizeof(serverAddress);
+
+        // Receive a message from the server
+        bytesRead = recvfrom(udpSocket, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&serverAddress, &serverAddressLength);
+        if (bytesRead <= 0) {
+            perror("Error receiving UDP message");
+            exit(EXIT_FAILURE);
         }
 
         // Null-terminate the received message
-        tcpBuffer[bytesRead] = '\0';
+        buffer[bytesRead] = '\0';
 
-        // Print the received message
-        printf("Server: %s\n", tcpBuffer);
-    }
-}
+        // Print the received message from the server
+        printf("Received from server: %s\n", buffer);
 
-void handleUDPChat(int udpSocket) {
-    struct sockaddr_in serverAddr;
-    char udpBuffer[BUFFER_SIZE];
-
-    // Configure server address for UDP multicast
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = inet_addr(MULTICAST_GROUP);
-    serverAddr.sin_port = htons(UDP_PORT);
-
-    while (1) {
-        // Receive message over UDP multicast from the server
-        ssize_t bytesRead = recvfrom(udpSocket, udpBuffer, BUFFER_SIZE - 1, 0, NULL, NULL);
-        if (bytesRead == -1) {
-            perror("UDP receive failed");
-            break;
-        } else if (bytesRead == 0) {
-            printf("Disconnected from the multicast group.\n");
-            break;
-        }
-
-        // Null-terminate the received message
-        udpBuffer[bytesRead] = '\0';
-
-        // Print the received message
-        printf("Server: %s\n", udpBuffer);
+        // Clear the buffer
+        memset(buffer, 0, BUFFER_SIZE);
     }
 }
