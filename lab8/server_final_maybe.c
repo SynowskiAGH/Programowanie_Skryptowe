@@ -12,20 +12,20 @@
 void handlePrivateChat(int clientSocket);
 void handleGroupChat(int udpSocket);
 
-int main() {
+int main(int argc, char *argv[]) {  // Added argc and argv[] parameters
     int tcpServerSocket, udpServerSocket, clientSocket;
     struct sockaddr_in tcpServerAddress, udpServerAddress, clientAddress;
     char buffer[BUFFER_SIZE];
     socklen_t clientAddressLength;
 
-    //Check if a multicast group address was given
+    // Check if a multicast group address was given
     if (argc != 2) {
        printf("Please give a multicast address as an argument\n");
        return 1;
     }
     char* group = argv[1];
 
-    //Create a socket for multicast UDP
+    // Create a socket for multicast UDP
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0) {
         perror("Error creating the multicast socket");
@@ -131,7 +131,7 @@ void handlePrivateChat(int clientSocket) {
         printf("Received from client: %s\n", buffer);
 
         // Forward the message to the multicast group if anything was received
-        if (bytesRead>0){
+        if (bytesRead > 0) {
             char ch = 0;
             int nbytes = sendto(
                 fd,
@@ -143,7 +143,7 @@ void handlePrivateChat(int clientSocket) {
             );
             if (nbytes < 0) {
                 perror("sendto");
-                return 1;
+                exit(EXIT_FAILURE);
             }
         }
 
@@ -178,15 +178,15 @@ void handleGroupChat(int udpSocket) {
         char ch = 0;
         int nbytes = sendto(
             fd,
-            message,
-            strlen(message),
+            buffer,
+            strlen(buffer),
             0,
             (struct sockaddr*) &addr,
             sizeof(addr)
         );
         if (nbytes < 0) {
             perror("sendto");
-            return 1;
+            exit(EXIT_FAILURE);
         }
 
         // Clear the buffer
