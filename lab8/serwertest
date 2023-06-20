@@ -142,36 +142,3 @@ void handlePrivateChat(int clientSocket) {
         memset(buffer, 0, BUFFER_SIZE);
     }
 }
-
-void handleGroupChat(int udpSocket) {
-    struct sockaddr_in clientAddress;
-    char buffer[BUFFER_SIZE];
-    socklen_t clientAddressLength;
-    int bytesRead;
-
-    while (1) {
-        clientAddressLength = sizeof(clientAddress);
-
-        // Receive a message from a client in the group
-        bytesRead = recvfrom(udpSocket, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&clientAddress, &clientAddressLength);
-        if (bytesRead <= 0) {
-            perror("Error receiving UDP message");
-            exit(EXIT_FAILURE);
-        }
-
-        // Null-terminate the received message
-        buffer[bytesRead] = '\0';
-
-        // Print the received message and client information
-        printf("Received from client (%s:%d): %s\n", inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port), buffer);
-
-        // Send the message to multicast group
-        if (sendto(udpSocket, buffer, strlen(buffer), 0, (struct sockaddr *)&multicastAddr, sizeof(multicastAddr)) <0) {
-        perror("Error sending UDP message");
-        exit(EXIT_FAILURE);
-        }
-
-        // Clear the buffer
-        memset(buffer, 0, BUFFER_SIZE);
-    }
-}
