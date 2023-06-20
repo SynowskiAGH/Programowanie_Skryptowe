@@ -13,6 +13,21 @@
 
 void handleMulticast(int udpSocket);
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netinet/in.h>
+
+#define TCP_PORT 8080             // TCP server port
+#define UDP_PORT 9090             // UDP multicast server port
+#define MULTICAST_GROUP "239.0.0.1"
+#define BUFFER_SIZE 1024
+
+void handleMulticast(int udpSocket);
+
 int main() {
     int tcpSocket, udpSocket;
     struct sockaddr_in serverAddress;
@@ -50,18 +65,10 @@ int main() {
     printf("Connected to server. Enter 'q' to quit.\n");
 
     // Create child process to handle multicast
-    pid_t childPID = fork();
-    if (childPID == -1) {
-        perror("Error creating child process");
-        exit(EXIT_FAILURE);
-    } else if (childPID == 0) {
-        // Child process
+    if (fork() == 0) {
         handleMulticast(udpSocket);
-        close(udpSocket);
         exit(EXIT_SUCCESS);
     }
-
-    // Parent process
 
     // Send messages to the server
     while (1) {
@@ -83,14 +90,50 @@ int main() {
         }
     }
 
-    // Close the TCP socket
+    // Close the TCP and UDP sockets
     close(tcpSocket);
-
-    // Wait for the child process to exit
-    int status;
-    waitpid(childPID, &status, 0);
+    close(udpSocket);
 
     return 0;
+}
+
+void handleMulticast(int udpSocket) {
+    struct sockaddr_in multicastAddr;
+    char buffer[BUFFER_SIZE];
+    ssize_t bytesRead;
+
+    // Set up multicast address
+    multicastAddr.sin_family = AF_INET;
+    multicastAddr.sin_port = htons(UDP_PORT);
+    if (inet_aton(MULTICAST_GROUP, &multicastAddr.sin_addr) == 0) {
+        perror("Invalid multicast address");
+        exit(EXIT_FAILURE);
+    }
+
+    // Join the multicast group
+    struct ip_mreq multicastRequest;
+    multicastRequest.imr_multiaddr.s_addr = inet_addr(MULTICAST_GROUP);
+    multicastRequest.imr_interface.s_addr = htonl(INADDR_ANY);
+    if (setsockopt(udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&multicastRequest, sizeof(multicastRequest)) < 0) {
+        perror("Joining multicast group failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Receive messages from the multicast group
+    while (1) {
+        // Clear the buffer
+        memset(buffer, 0, BUFFER_SIZE);
+
+        // Receive a message from the multicast group
+        bytesRead = recvfrom(udpSocket, buffer, BUFFER_SIZE, 0, NULL, NULL);
+        if (bytesRead < 0) {
+            perror("Error receiving UDP message");
+            exit(EXIT_FAILURE);
+        }
+
+        // Print the received message
+        printf("Received from multicast: %s\n", buffer);
+    }
 }
 
 void handleMulticast(int udpSocket) {
