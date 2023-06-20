@@ -9,9 +9,19 @@
 #define UDP_PORT 9090             // UDP multicast server port
 #define MULTICAST_GROUP "239.0.0.1"
 #define BUFFER_SIZE 1024
+#define MAX_CLIENTS 10
+
+struct Client {
+    int socket;
+    struct sockaddr_in address;
+};
+
+struct Client connectedClients[MAX_CLIENTS];
+int connectedClientsCount = 0;
 
 void handlePrivateChat(int clientSocket);
 void handleGroupChat(int udpSocket);
+void broadcastMessage(const char *message, int udpSocket, struct sockaddr_in senderAddress);
 
 int main(int argc, char *argv[]) {
     int tcpServerSocket, udpServerSocket, clientSocket;
