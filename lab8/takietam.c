@@ -13,21 +13,6 @@
 
 void handleMulticast(int udpSocket);
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <netinet/in.h>
-
-#define TCP_PORT 8080             // TCP server port
-#define UDP_PORT 9090             // UDP multicast server port
-#define MULTICAST_GROUP "239.0.0.1"
-#define BUFFER_SIZE 1024
-
-void handleMulticast(int udpSocket);
-
 int main() {
     int tcpSocket, udpSocket;
     struct sockaddr_in serverAddress;
