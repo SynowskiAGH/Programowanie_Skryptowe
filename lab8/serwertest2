@@ -84,7 +84,7 @@ int main() {
         clientSocket = accept(tcpServerSocket, (struct sockaddr *)&clientAddress, &clientAddressLength);
         if (clientSocket < 0) {
             perror("TCP accept failed");
-            exit(EXIT_FAILURE);
+            continue;
         }
 
         printf("New client connected: %s\n", inet_ntoa(clientAddress.sin_addr));
