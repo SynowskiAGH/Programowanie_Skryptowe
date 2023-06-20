@@ -10,7 +10,7 @@
 #define MULTICAST_GROUP "239.0.0.1"
 #define BUFFER_SIZE 1024
 
-void handlePrivateChat(int clientSocket);
+void handlePrivateChat(int clientSocket, int udpSocket, struct sockaddr_in multicastAddr);
 void handleGroupChat(int udpSocket);
 
 int main(int argc, char *argv[]) {
@@ -164,6 +164,12 @@ void handleGroupChat(int udpSocket) {
 
         // Print the received message and client information
         printf("Received from client (%s:%d): %s\n", inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port), buffer);
+
+        // Send the message to multicast group
+        if (sendto(udpSocket, buffer, strlen(buffer), 0, (struct sockaddr *)&multicastAddr, sizeof(multicastAddr)) <0) {
+        perror("Error sending UDP message");
+        exit(EXIT_FAILURE);
+        }
 
         // Clear the buffer
         memset(buffer, 0, BUFFER_SIZE);
