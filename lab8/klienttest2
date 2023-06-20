@@ -11,6 +11,8 @@
 #define MULTICAST_GROUP "239.0.0.1"
 #define BUFFER_SIZE 1024
 
+void handleUDPChat(int udpSocket);
+
 int main() {
     int tcpSocket, udpSocket;
     struct sockaddr_in serverAddr, udpAddr;
@@ -69,18 +71,12 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Set UDP socket to non-blocking mode
-    int flags = fcntl(udpSocket, F_GETFL, 0);
-    if (flags == -1) {
-        perror("fcntl F_GETFL failed");
-        exit(EXIT_FAILURE);
+    // Handle UDP chat in a separate thread
+    if (fork() == 0) {
+        handleUDPChat(udpSocket);
+        close(udpSocket);
+        exit(EXIT_SUCCESS);
     }
-    if (fcntl(udpSocket, F_SETFL, flags | O_NONBLOCK) == -1) {
-        perror("fcntl F_SETFL failed");
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Connected to the server. Start typing messages.\n");
 
     while (1) {
         // Send message over TCP
@@ -88,23 +84,33 @@ int main() {
         fgets(tcpBuffer, BUFFER_SIZE, stdin);
         send(tcpSocket, tcpBuffer, strlen(tcpBuffer), 0);
 
-        // Receive messages over UDP
-        ssize_t bytesRead;
-        do {
-            bytesRead = recv(udpSocket, udpBuffer, BUFFER_SIZE, 0);
-            if (bytesRead > 0) {
-                udpBuffer[bytesRead] = '\0';
-                printf("Received message over UDP: %s\n", udpBuffer);
-            }
-        } while (bytesRead > 0);
-
         // Wait for a while before the next iteration
-        usleep(100000);
+        sleep(1);
     }
 
-    // Close sockets
+    // Close TCP socket
     close(tcpSocket);
-    close(udpSocket);
 
     return 0;
+}
+
+void handleUDPChat(int udpSocket) {
+    char udpBuffer[BUFFER_SIZE];
+    struct sockaddr_in udpAddr;
+    socklen_t addrLen = sizeof(udpAddr);
+
+    while (1) {
+        // Receive message over UDP
+        ssize_t bytesRead = recvfrom(udpSocket, udpBuffer, BUFFER_SIZE, 0, (struct sockaddr *)&udpAddr, &addrLen);
+        if (bytesRead == -1) {
+            perror("UDP receive failed");
+            break;
+        }
+
+        // Null-terminate the received message
+        udpBuffer[bytesRead] = '\0';
+
+        // Print the received message
+        printf("Received UDP message: %s\n", udpBuffer);
+    }
 }
