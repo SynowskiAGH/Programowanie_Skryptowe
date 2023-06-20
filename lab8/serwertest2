@@ -4,165 +4,134 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <fcntl.h>
+#include <netinet/in.h>
 
 #define TCP_PORT 8080             // TCP server port
 #define UDP_PORT 9090             // UDP multicast server port
 #define MULTICAST_GROUP "239.0.0.1"
 #define BUFFER_SIZE 1024
-#define MAX_CLIENTS 10
 
-typedef struct {
-    int socket;
-    struct sockaddr_in address;
-} Client;
-
-Client clients[MAX_CLIENTS];
-int connectedClientsCount = 0;
-
-void broadcastMessage(char *message);
+void handlePrivateChat(int clientSocket, int udpSocket, struct sockaddr_in multicastAddr);
 
 int main() {
-    int tcpSocket, udpSocket, newSocket;
-    struct sockaddr_in serverAddr, clientAddr;
-    socklen_t addrLen = sizeof(clientAddr);
-    char tcpBuffer[BUFFER_SIZE];
+    int tcpServerSocket, udpSocket, clientSocket;
+    struct sockaddr_in tcpServerAddress, udpServerAddress, clientAddress;
+    char buffer[BUFFER_SIZE];
+    socklen_t clientAddressLength;
 
     // Create TCP socket
-    if ((tcpSocket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror("TCP socket creation failed");
+    tcpServerSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (tcpServerSocket == -1) {
+        perror("Error creating TCP socket");
         exit(EXIT_FAILURE);
     }
 
     // Create UDP socket
-    if ((udpSocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-        perror("UDP socket creation failed");
+    udpSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (udpSocket == -1) {
+        perror("Error creating UDP socket");
         exit(EXIT_FAILURE);
     }
 
-    // Set SO_REUSEADDR option for TCP socket
-    int reuse = 1;
-    if (setsockopt(tcpSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
-        perror("TCP setsockopt(SO_REUSEADDR) failed");
+    // Set up TCP server address
+    tcpServerAddress.sin_family = AF_INET;
+    tcpServerAddress.sin_addr.s_addr = INADDR_ANY;
+    tcpServerAddress.sin_port = htons(TCP_PORT);
+
+    // Bind the TCP socket to the TCP server address
+    if (bind(tcpServerSocket, (struct sockaddr *)&tcpServerAddress, sizeof(tcpServerAddress)) < 0) {
+        perror("TCP socket binding failed");
         exit(EXIT_FAILURE);
     }
 
-    // Set SO_REUSEADDR option for UDP socket
-    if (setsockopt(udpSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
-        perror("UDP setsockopt(SO_REUSEADDR) failed");
+    // Set up UDP server address
+    udpServerAddress.sin_family = AF_INET;
+    udpServerAddress.sin_addr.s_addr = INADDR_ANY;
+    udpServerAddress.sin_port = htons(UDP_PORT);
+
+    // Bind the UDP socket to the UDP server address
+    if (bind(udpSocket, (struct sockaddr *)&udpServerAddress, sizeof(udpServerAddress)) < 0) {
+        perror("UDP socket binding failed");
         exit(EXIT_FAILURE);
     }
 
-    // Configure server address for TCP connection
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = INADDR_ANY;
-    serverAddr.sin_port = htons(TCP_PORT);
+    printf("Server started. Waiting for connections...\n");
 
-    // Bind TCP socket to the server address
-    if (bind(tcpSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
-        perror("TCP bind failed");
+    // Configure multicast address
+    struct sockaddr_in multicastAddr;
+    memset(&multicastAddr, 0, sizeof(multicastAddr));
+    multicastAddr.sin_family = AF_INET;
+    multicastAddr.sin_port = htons(UDP_PORT);
+    if (inet_aton(MULTICAST_GROUP, &multicastAddr.sin_addr) == 0) {
+        perror("Invalid multicast address");
         exit(EXIT_FAILURE);
     }
 
-    // Configure server address for UDP multicast
-    struct sockaddr_in udpAddr;
-    udpAddr.sin_family = AF_INET;
-    udpAddr.sin_addr.s_addr = inet_addr(MULTICAST_GROUP);
-    udpAddr.sin_port = htons(UDP_PORT);
-
-    // Join the UDP multicast group
-    if (setsockopt(udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &udpAddr, sizeof(udpAddr)) == -1) {
+    // Join the multicast group
+    struct ip_mreq multicastRequest;
+    multicastRequest.imr_multiaddr.s_addr = inet_addr(MULTICAST_GROUP);
+    multicastRequest.imr_interface.s_addr = htonl(INADDR_ANY);
+    if (setsockopt(udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&multicastRequest, sizeof(multicastRequest)) < 0) {
         perror("Joining multicast group failed");
         exit(EXIT_FAILURE);
     }
 
-    // Listen for TCP connections
-    if (listen(tcpSocket, MAX_CLIENTS) == -1) {
-        perror("TCP listen failed");
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Server started. Listening for connections...\n");
-
+    // Accept TCP connections and handle private chat
     while (1) {
-        // Accept a new TCP connection
-        if ((newSocket = accept(tcpSocket, (struct sockaddr *)&clientAddr, &addrLen)) == -1) {
+        clientAddressLength = sizeof(clientAddress);
+
+        // Accept TCP connection from a client
+        clientSocket = accept(tcpServerSocket, (struct sockaddr *)&clientAddress, &clientAddressLength);
+        if (clientSocket < 0) {
             perror("TCP accept failed");
             exit(EXIT_FAILURE);
         }
 
-        // Add the new client to the clients array
-        Client newClient;
-        newClient.socket = newSocket;
-        newClient.address = clientAddr;
-        clients[connectedClientsCount] = newClient;
-        connectedClientsCount++;
+        printf("New client connected: %s\n", inet_ntoa(clientAddress.sin_addr));
 
-        printf("New client connected. Client count: %d\n", connectedClientsCount);
-
-        // Create a new thread to handle the TCP connection for this client
+        // Fork a child process to handle private chat
         if (fork() == 0) {
-            close(tcpSocket); // Child process doesn't need the listener socket
-
-            // Handle TCP chat for this client
-            handleTCPChat(newSocket);
-
-            // Remove the client from the clients array
-            for (int i = 0; i < connectedClientsCount; i++) {
-                if (clients[i].socket == newSocket) {
-                    close(clients[i].socket);
-                    for (int j = i; j < connectedClientsCount - 1; j++) {
-                        clients[j] = clients[j + 1];
-                    }
-                    connectedClientsCount--;
-                    break;
-                }
-            }
-
-            printf("Client disconnected. Client count: %d\n", connectedClientsCount);
+            close(tcpServerSocket);  // Child process doesn't need to listen for new connections
+            handlePrivateChat(clientSocket, udpSocket, multicastAddr);
+            close(clientSocket);
             exit(EXIT_SUCCESS);
         } else {
-            close(newSocket); // Parent process doesn't need the new socket
+            close(clientSocket);  // Parent process doesn't need this client socket
         }
     }
 
-    // Close sockets
-    close(tcpSocket);
+    // Close the TCP and UDP sockets
+    close(tcpServerSocket);
     close(udpSocket);
 
     return 0;
 }
 
-void handleTCPChat(int tcpSocket) {
-    char tcpBuffer[BUFFER_SIZE];
+void handlePrivateChat(int clientSocket, int udpSocket, struct sockaddr_in multicastAddr) {
+    char buffer[BUFFER_SIZE];
+    int bytesRead;
 
     while (1) {
-        // Receive message over TCP from the client
-        ssize_t bytesRead = recv(tcpSocket, tcpBuffer, BUFFER_SIZE - 1, 0);
-        if (bytesRead == -1) {
-            perror("TCP receive failed");
+        // Receive a message from the client
+        bytesRead = recv(clientSocket, buffer, BUFFER_SIZE, 0);
+        if (bytesRead <= 0) {
+            printf("Client disconnected\n");
             break;
         }
 
         // Null-terminate the received message
-        tcpBuffer[bytesRead] = '\0';
+        buffer[bytesRead] = '\0';
 
-        // If the message is "/quit", exit the loop and terminate the client
-        if (strcmp(tcpBuffer, "/quit") == 0) {
-            break;
+        // Print the received message
+        printf("Received from client: %s\n", buffer);
+
+        // Send the received message to the multicast group over UDP
+        if (sendto(udpSocket, buffer, strlen(buffer), 0, (struct sockaddr *)&multicastAddr, sizeof(multicastAddr)) < 0) {
+            perror("Error sending UDP message");
+            exit(EXIT_FAILURE);
         }
 
-        // Broadcast the message to all clients
-        broadcastMessage(tcpBuffer);
-    }
-}
-
-void broadcastMessage(char *message) {
-    for (int i = 0; i < connectedClientsCount; i++) {
-        // Send the message over UDP to each client
-        ssize_t bytesSent = sendto(udpSocket, message, strlen(message), 0, (struct sockaddr *)&(clients[i].address), sizeof(clients[i].address));
-        if (bytesSent == -1) {
-            perror("UDP send failed");
-        }
+        // Clear the buffer
+        memset(buffer, 0, BUFFER_SIZE);
     }
 }
