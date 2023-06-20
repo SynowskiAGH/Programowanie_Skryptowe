@@ -11,18 +11,25 @@
 #define MULTICAST_GROUP "239.0.0.1"
 #define BUFFER_SIZE 1024
 
-void handleServerMessages(int udpSocket);
+void handleMulticast(int udpSocket);
 
 int main() {
     int tcpSocket, udpSocket;
     struct sockaddr_in serverAddress;
     char buffer[BUFFER_SIZE];
-    int bytesRead;
+    ssize_t bytesRead;
 
     // Create TCP socket
     tcpSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (tcpSocket == -1) {
         perror("Error creating TCP socket");
+        exit(EXIT_FAILURE);
+    }
+
+    // Create UDP socket
+    udpSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (udpSocket == -1) {
+        perror("Error creating UDP socket");
         exit(EXIT_FAILURE);
     }
 
@@ -40,12 +47,51 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    printf("Connected to the server.\n");
+    printf("Connected to server. Enter 'q' to quit.\n");
 
-    // Create UDP socket
-    udpSocket = socket(AF_INET, SOCK_DGRAM, 0);
-    if (udpSocket == -1) {
-        perror("Error creating UDP socket");
+    // Create child process to handle multicast
+    if (fork() == 0) {
+        handleMulticast(udpSocket);
+        exit(EXIT_SUCCESS);
+    }
+
+    // Send messages to the server
+    while (1) {
+        // Read input from the user
+        fgets(buffer, BUFFER_SIZE, stdin);
+
+        // Remove newline character
+        buffer[strcspn(buffer, "\n")] = '\0';
+
+        // Check if user wants to quit
+        if (strcmp(buffer, "q") == 0) {
+            break;
+        }
+
+        // Send the message to the server
+        if (send(tcpSocket, buffer, strlen(buffer), 0) < 0) {
+            perror("Error sending TCP message");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // Close the TCP and UDP sockets
+    close(tcpSocket);
+    close(udpSocket);
+
+    return 0;
+}
+
+void handleMulticast(int udpSocket) {
+    struct sockaddr_in multicastAddr;
+    char buffer[BUFFER_SIZE];
+    ssize_t bytesRead;
+
+    // Set up multicast address
+    multicastAddr.sin_family = AF_INET;
+    multicastAddr.sin_port = htons(UDP_PORT);
+    if (inet_aton(MULTICAST_GROUP, &multicastAddr.sin_addr) == 0) {
+        perror("Invalid multicast address");
         exit(EXIT_FAILURE);
     }
 
@@ -58,67 +104,19 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Fork a child process to handle server messages
-    if (fork() == 0) {
-        close(tcpSocket);  // Child process doesn't need the TCP socket
-        handleServerMessages(udpSocket);
-        close(udpSocket);
-        exit(EXIT_SUCCESS);
-    } else {
-        close(udpSocket);  // Parent process doesn't need the UDP socket
-    }
-
-    // Send messages to the server
+    // Receive messages from the multicast group
     while (1) {
-        printf("Enter a message: ");
-        fgets(buffer, BUFFER_SIZE, stdin);
-
-        // Remove the newline character from the input
-        buffer[strcspn(buffer, "\n")] = '\0';
-
-        // Send the message to the server
-        if (send(tcpSocket, buffer, strlen(buffer), 0) < 0) {
-            perror("Error sending message to server");
-            exit(EXIT_FAILURE);
-        }
-
-        // Check for the "exit" command to terminate the client
-        if (strcmp(buffer, "exit") == 0)
-            break;
-
         // Clear the buffer
         memset(buffer, 0, BUFFER_SIZE);
-    }
 
-    // Close the TCP socket
-    close(tcpSocket);
-
-    return 0;
-}
-
-void handleServerMessages(int udpSocket) {
-    struct sockaddr_in serverAddress;
-    char buffer[BUFFER_SIZE];
-    socklen_t serverAddressLength;
-    int bytesRead;
-
-    while (1) {
-        serverAddressLength = sizeof(serverAddress);
-
-        // Receive a message from the server
-        bytesRead = recvfrom(udpSocket, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&serverAddress, &serverAddressLength);
-        if (bytesRead <= 0) {
+        // Receive a message from the multicast group
+        bytesRead = recvfrom(udpSocket, buffer, BUFFER_SIZE, 0, NULL, NULL);
+        if (bytesRead < 0) {
             perror("Error receiving UDP message");
             exit(EXIT_FAILURE);
         }
 
-        // Null-terminate the received message
-        buffer[bytesRead] = '\0';
-
-        // Print the received message from the server
-        printf("Received from server: %s\n", buffer);
-
-        // Clear the buffer
-        memset(buffer, 0, BUFFER_SIZE);
+        // Print the received message
+        printf("Received from multicast: %s\n", buffer);
     }
 }
