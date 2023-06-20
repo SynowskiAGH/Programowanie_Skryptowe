@@ -51,7 +51,7 @@ int main() {
 
     // Create child process to handle multicast
     if (fork() == 0) {
-        handleMulticast(udpSocket);
+        handleMulticast();
         exit(EXIT_SUCCESS);
     }
 
@@ -82,12 +82,20 @@ int main() {
     return 0;
 }
 
-void handleMulticast(int udpSocket) {
-    struct sockaddr_in multicastAddr;
+void handleMulticast() {
     char buffer[BUFFER_SIZE];
     ssize_t bytesRead;
+    int childUdpSocket;
+    
+    // Create UDP socket in the child process
+    childUdpSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (childUdpSocket == -1) {
+        perror("Error creating UDP socket in child process");
+        exit(EXIT_FAILURE);
+    }
 
     // Set up multicast address
+    struct sockaddr_in multicastAddr;
     multicastAddr.sin_family = AF_INET;
     multicastAddr.sin_port = htons(UDP_PORT);
     if (inet_aton(MULTICAST_GROUP, &multicastAddr.sin_addr) == 0) {
@@ -99,50 +107,16 @@ void handleMulticast(int udpSocket) {
     struct ip_mreq multicastRequest;
     multicastRequest.imr_multiaddr.s_addr = inet_addr(MULTICAST_GROUP);
     multicastRequest.imr_interface.s_addr = htonl(INADDR_ANY);
-    if (setsockopt(udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&multicastRequest, sizeof(multicastRequest)) < 0) {
-        perror("Joining multicast group failed");
+    if (setsockopt(childUdpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&multicastRequest, sizeof(multicastRequest)) < 0) {
+        perror("Joining multicast group failed in child process");
         exit(EXIT_FAILURE);
     }
 
-    // Receive messages from the multicast group
-    while (1) {
-        // Clear the buffer
-        memset(buffer, 0, BUFFER_SIZE);
-
-        // Receive a message from the multicast group
-        bytesRead = recvfrom(udpSocket, buffer, BUFFER_SIZE, 0, NULL, NULL);
-        if (bytesRead < 0) {
-            perror("Error receiving UDP message");
-            exit(EXIT_FAILURE);
-        }
-
-        // Print the received message
-        printf("Received from multicast: %s\n", buffer);
-    }
-}
-
-void handleMulticast(int udpSocket) {
-    struct sockaddr_in multicastAddr;
-    char buffer[BUFFER_SIZE];
-    ssize_t bytesRead;
-
-    // Set up multicast address
-    multicastAddr.sin_family = AF_INET;
-    multicastAddr.sin_port = htons(UDP_PORT);
-    if (inet_aton(MULTICAST_GROUP, &multicastAddr.sin_addr) == 0) {
-        perror("Invalid multicast address");
+    // Bind the UDP socket to the multicast address
+    if (bind(childUdpSocket, (struct sockaddr *)&multicastAddr, sizeof(multicastAddr)) < 0) {
+        perror("UDP socket binding failed in child process");
         exit(EXIT_FAILURE);
     }
-
-    // Join the multicast group
-    struct ip_mreq multicastRequest;
-    multicastRequest.imr_multiaddr.s_addr = inet_addr(MULTICAST_GROUP);
-    multicastRequest.imr_interface.s_addr = htonl(INADDR_ANY);
-    if (setsockopt(udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&multicastRequest, sizeof(multicastRequest)) < 0) {
-        perror("Joining multicast group failed");
-        exit(EXIT_FAILURE);
-    }
-
     // Receive messages from the multicast group
     while (1) {
         // Clear the buffer
